@@ -1,11 +1,7 @@
 import React from 'react';
 
-import {Cell, Counter, Panel, PanelHeader, Separator} from '@vkontakte/vkui';
-import {
-    Icon28NarrativeOutline,
-    Icon28PopupStickersCircleFillRaspberryPinkProduct,
-    Icon28StarsCircleFillViolet
-} from "@vkontakte/icons";
+import {Cell, Panel, PanelHeader} from '@vkontakte/vkui';
+import {Icon28NarrativeOutline} from "@vkontakte/icons";
 
 const Home = ({id, go, fetchedUser, callFriend}) => {
     return <Panel id={id}>

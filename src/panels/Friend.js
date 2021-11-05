@@ -13,22 +13,59 @@ import {
     Placeholder,
     Separator
 } from '@vkontakte/vkui';
-import {Icon56CakeCircleFillRaspberryPink} from '@vkontakte/icons';
+import {Icon56CakeCircleFillRaspberryPink, Icon56Fire, Icon56FireOutline} from '@vkontakte/icons';
+import {doc, getDoc, setDoc} from "firebase/firestore/lite";
 
-const Friend = ({id, go, fetchedUser, friend, meShacking, coord}) => {
+const Friend = ({id, go, fetchedUser, friend, meShacking, coord, speed, setMeShacking, db}) => {
     const [friendShacking, setFriendShacking] = useState(false)
-    const [friendThere, setFriendThere] = useState(true)
+    const [friendThere, setFriendThere] = useState(false)
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setFriendShacking(() => {
-                return Math.random() <= 0.5
-            }, 500)
+        const getFriendInfoTimer = setInterval(() => {
+            if (friend === null || fetchedUser === null) return
+            const my_id = fetchedUser.id.toString();
+            const fr_id = friend.id.toString()
+            const docRef = doc(db, 'bs', fr_id)
+            getDoc(docRef).then(snap => {
+                if (snap.exists()) {
+                    let f = snap.data()
+                    setFriendThere(() => {
+                        return f.friend_id !== null && f.friend_id.toString() === my_id
+                    })
+                    setFriendShacking(() => {
+                        return f.shake
+                    })
+                }
+            })
+
+        }, 500);
+
+        const sendMyInfoTimer = setInterval(() => {
+            setMeShacking((prev) => {
+                if (fetchedUser === null || friend === null) {
+                    return prev
+                }
+
+                const fr_id = friend.id.toString()
+                setDoc(doc(db, 'bs', fetchedUser.id.toString()), {
+                    friend_id: fr_id,
+                    shake: prev
+                })
+                return prev
+            })
         }, 500);
 
         return () => {
             console.log("unmount")
-            clearTimeout(timer);
+            clearTimeout(getFriendInfoTimer);
+            clearTimeout(sendMyInfoTimer)
+
+            if (fetchedUser !== null) {
+                setDoc(doc(db, 'bs', fetchedUser.id.toString()), {
+                    friend_id: null,
+                    shake: false
+                })
+            }
         }
     }, []);
 
@@ -36,10 +73,6 @@ const Friend = ({id, go, fetchedUser, friend, meShacking, coord}) => {
         <PanelHeader
             left={<PanelHeaderBack onClick={go} data-to={'Home'}/>}
         >Тет-а-тет</PanelHeader>
-        <Cell>x: {coord.x}</Cell>
-        <Cell>y: {coord.y}</Cell>
-        <Cell>z: {coord.z}</Cell>
-        <Cell>vector: {Math.sqrt(coord.x * coord.x + coord.y * coord.y + coord.z * coord.z)}</Cell>
         <Group header={<Header mode="secondary">Вы</Header>}>
             <Div style={{display: 'flex'}}>
                 <Button size="l" stretched mode="commerce" style={{marginRight: 8}}>Вы в тет-а-тет</Button>
@@ -49,7 +82,8 @@ const Friend = ({id, go, fetchedUser, friend, meShacking, coord}) => {
                 }
             </Div>
         </Group>
-        <Group header={<Header mode="secondary">{friend.first_name + " " + friend.last_name}</Header>}>
+        <Group header={<Header
+            mode="secondary">{(friend !== null ? friend.first_name : "...") + " " + (friend !== null ? friend.last_name : "")}</Header>}>
             <Div style={{display: 'flex'}}>
                 {friendThere ?
                     <Button size="l" stretched mode="commerce" style={{marginRight: 8}}>В тет-а-тет</Button>
@@ -74,11 +108,15 @@ const Friend = ({id, go, fetchedUser, friend, meShacking, coord}) => {
             }}>
                 <Avatar><Icon56CakeCircleFillRaspberryPink/></Avatar>
 
-                <Cell>Вы трясете одновременно</Cell>
+                <Cell>Вы трясете одновременно!</Cell>
 
                 <Avatar><Icon56CakeCircleFillRaspberryPink/></Avatar>
             </Div>
-            : null}
+            : <Placeholder
+                icon={meShacking ? <Icon56Fire fill={"DC143C"}/> : <Icon56FireOutline fill={"DC143C"}/>}
+                header="Трясьти нужно сильно!"
+            >
+            </Placeholder>}
 
     </Panel>
 }

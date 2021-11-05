@@ -6,6 +6,8 @@ import '@vkontakte/vkui/dist/vkui.css';
 import Home from './panels/Home';
 import WelcomeScreen from "./panels/WelcomeScreen";
 import Friend from "./panels/Friend";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs } from 'firebase/firestore/lite';
 
 const App = (allowedList1 = allowedList) => {
     const [activePanel, setActivePanel] = useState('WelcomeScreen');
@@ -14,9 +16,26 @@ const App = (allowedList1 = allowedList) => {
     const [scheme, setScheme] = useState(null)
     const [friend, setFriend] = useState(null)
     const [meShacking, setMeShacking] = useState(null)
+    const [speed, setSpeed] = useState(0)
+
     const [coord, setCoord] = useState({x: 0, y: 0, z: 0})
+    const [mAccel, setMAccel] = useState(10)
 
     const allowedList = [{text: ".org", id: 4}, {text: ".ru", id: 5}, {text: "aa", id: 6}]
+
+    const d = false
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAdyvR02PGXySkvscIH9y8rktyVQXYzUIk",
+        authDomain: "rarara3-ead99.firebaseapp.com",
+        projectId: "rarara3-ead99",
+        storageBucket: "rarara3-ead99.appspot.com",
+        messagingSenderId: "317914636705",
+        appId: "1:317914636705:web:a033f970a56b50ec49abe0"
+    };
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const db = getFirestore(firebaseApp)
 
     useEffect(() => {
         bridge.subscribe(({detail: {type, data}}) => {
@@ -29,14 +48,18 @@ const App = (allowedList1 = allowedList) => {
             }
 
             if (type === 'VKWebAppAccelerometerChanged') {
+                const x = data.x
+                const y = data.y
+                const z = data.z
+
+                let speed1 = Math.sqrt(x * x + y * y + z * z)
                 setMeShacking(() => {
-                    const x = data.x * data.x
-                    const y = data.y * data.y
-                    const z = data.z * data.z
-                    return Math.sqrt(x + y + z) >= 50
+                    return speed1 > 11
                 })
+
+                setSpeed(() => speed1)
                 setCoord(() => {
-                    return {x: data.x, y: data.y, z: data.z}
+                    return {x: x, y: y, z: z}
                 })
             }
         });
@@ -44,22 +67,42 @@ const App = (allowedList1 = allowedList) => {
         async function fetchData() {
             setPopout(null);
             const user = await bridge.send('VKWebAppGetUserInfo')
-            bridge.send("VKWebAppAccelerometerStart", {"refresh_rate": 100});
+            bridge.send("VKWebAppAccelerometerStart", {"refresh_rate": 200});
             setUser(user);
         }
 
-        let timer = null
+        let timer = setInterval(() => {
+            const coord1 = coord
+            let coord2 = null
+            setTimeout(() => {
+                coord2 = coord
+                if (coord1.x === coord2.x && coord1.y === coord2.y && coord1.z === coord2.z) {
+                    bridge.send("VKWebAppAccelerometerStart", {"refresh_rate": 200});
+                }
+            }, 500)
+        }, 1000)
 
         async function fakeAcc() {
             timer = setInterval(() => {
+                const data = {x: 0 + Math.random() * 5, y: 1 - Math.random() * 5, z: 9 + Math.random() * 5}
+                const x = data.x
+                const y = data.y
+                const z = data.z
+                let speed1 = Math.sqrt(x * x + y * y + z * z)
                 setMeShacking(() => {
-                    return Math.random() <= 0.5
+                    return speed1 > 11
                 })
-            }, 2000)
+
+                setSpeed(() => speed1)
+                setCoord(() => {
+                    return {x: x, y: y, z: z}
+                })
+            }, 300)
         }
 
         fetchData();
-        // fakeAcc();
+        if (d)
+            fakeAcc();
 
         return () => {
             if (timer !== null) {
@@ -75,24 +118,23 @@ const App = (allowedList1 = allowedList) => {
     const callFriend = async () => {
         bridge.send('VKWebAppGetFriends', {}).then(data => {
             setFriend(() => data.users[0])
+            setActivePanel(() => 'Friend')
         })
 
-        let a = {
-            "id": 2884043,
-            "first_name": "Albert",
-            "last_name": "Usmanov",
-            "sex": 2,
-            "photo_200": "..."
-        }
+        if (d) {
+            let a = {
+                "id": "0",
+                "first_name": "Albert",
+                "last_name": "Usmanov",
+                "sex": 2,
+                "photo_200": "..."
+            }
 
-        setFriend(() => a)
-    }
-
-    useEffect(() => {
-        if (friend !== null) {
+            setFriend(() => a)
             setActivePanel(() => 'Friend')
+            setUser({id: "1"})
         }
-    }, [friend])
+    }
 
     return (
         <AdaptivityProvider>
@@ -106,7 +148,10 @@ const App = (allowedList1 = allowedList) => {
                             fetchedUser={fetchedUser} go={go}
                             friend={friend}
                             meShacking={meShacking}
-                            coord={coord}/>
+                            setMeShacking={setMeShacking}
+                            coord={coord}
+                            speed={speed}
+                            db={db}/>
                 </View>
             </AppRoot>
         </AdaptivityProvider>
