@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/Rarara3/static/js/main.c665d35f.chunk.js",
-    "main.js.map": "/Rarara3/static/js/main.c665d35f.chunk.js.map",
+    "main.js": "/Rarara3/static/js/main.cd87c1e6.chunk.js",
+    "main.js.map": "/Rarara3/static/js/main.cd87c1e6.chunk.js.map",
     "runtime-main.js": "/Rarara3/static/js/runtime-main.1b9eb60e.js",
     "runtime-main.js.map": "/Rarara3/static/js/runtime-main.1b9eb60e.js.map",
     "static/css/2.cf5ef10e.chunk.css": "/Rarara3/static/css/2.cf5ef10e.chunk.css",
@@ -16,6 +16,6 @@
     "static/js/runtime-main.1b9eb60e.js",
     "static/css/2.cf5ef10e.chunk.css",
     "static/js/2.ce5114fb.chunk.js",
-    "static/js/main.c665d35f.chunk.js"
+    "static/js/main.cd87c1e6.chunk.js"
   ]
 }
